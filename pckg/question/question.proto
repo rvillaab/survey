@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package question;
+
+option go_package = "survey/pckg/question";
+
+service QuestionService{
+
+rpc GetQuestions(Request) returns (Result) {}
+
+}
+
+
+// The request message containing the user's name.
+message EmptyRequest {
+}
+
+// The request message containing the user's name.
+message Request {
+    string name = 1;
+  }
+
+
+  // The response message containing the greetings
+message Result {
+    string message = 1;
+  }
+  
