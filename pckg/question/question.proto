@@ -4,9 +4,16 @@ package question;
 
 option go_package = "survey/pckg/question";
 
+import "google/protobuf/timestamp.proto";
+
 service QuestionService{
 
-rpc GetQuestions(Request) returns (Result) {}
+rpc CreateQuestion(Question) returns (Result);
+rpc GetAllQuestions(EmptyRequest) returns (AllQuestionResponse);
+rpc UpdateQuestion(RequestWithId) returns (Result);
+rpc DeleteQuestion(RequestWithId) returns (Result);
+rpc GetQuestionById(RequestWithId) returns (Question);
+//rpc GetQuestionsByUser()returns ();
 
 }
 
@@ -16,7 +23,7 @@ message EmptyRequest {
 }
 
 // The request message containing the user's name.
-message Request {
+message RequestWithId {
     string name = 1;
   }
 
@@ -25,4 +32,21 @@ message Request {
 message Result {
     string message = 1;
   }
+
+message Question {
+
+  string    ID            =1;
+	string    Content       =2;
+	string    Description   =3;
+	google.protobuf.Timestamp  CreatedAt  =4;
+	string    UserCreated   =5;
+	google.protobuf.Timestamp UpdatedAt   =6;
+  string    UserUpdated   =7;
+
+}
+
+
+message AllQuestionResponse {
+  repeated Question questions=1;
+}
   
