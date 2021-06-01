@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	ent "survey/pckg/entity"
+	ent "survey/pckg/model"
 
 	"github.com/gorilla/mux"
 )

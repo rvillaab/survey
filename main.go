@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	e "survey/pckg/endpoint"
+	"survey/pckg/enviroment"
 	pb "survey/pckg/question"
 	"survey/pckg/server"
 	"survey/pckg/service"
@@ -26,8 +27,11 @@ func main() {
 
 	flag.Parse()
 	ctx := context.Background()
-	srv := service.NewQuestionService()
-	srv1 := service.NewAnswerService()
+	srv := service.NewQuestionService(enviroment.GoDotEnvVariable("DB_HOST"),
+		enviroment.GoDotEnvVariable("DB_USER"),
+		enviroment.GoDotEnvVariable("DB_PASSWORD"),
+		enviroment.GoDotEnvVariable("DB_NAME"))
+
 	errChan := make(chan error)
 
 	go func() {
@@ -38,14 +42,12 @@ func main() {
 
 	// mapping endpoints
 	endpoints := e.Endpoints{
-		CountEndpoint:              e.MakeCountEndpoint(srv),
 		GetAllQuestionsEndpoint:    e.MakeGetallQuestionsEndpoint(srv),
 		CreateQuestionEndpoint:     e.MakeCreateQuestionEndpoint(srv),
 		UpdateQuestionEndpoint:     e.MakeUpdateQuestionEndpoint(srv),
 		DeleteQuestionEndpoint:     e.MakeDeleteQuestionEndpoint(srv),
 		GetQuestionByIdEndpoint:    e.MakeGetQuestionByIdEndpoint(srv),
 		GetQuestionsByUserEndpoint: e.MakeGetQuestionsByUserEndpoint(srv),
-		GetAllAnswersEndpoint:      e.MakeGetallAnswersEndpoint(srv1),
 	}
 
 	// HTTP transport

@@ -1,16 +1,19 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
-	ent "survey/pckg/entity"
-	"time"
+	"log"
+	"survey/pckg/model"
+	ent "survey/pckg/model"
+
+	_ "github.com/lib/pq"
 )
 
 type QuestionService interface {
 	CreateQuestion(ent.Question) (ent.Question, error)
 	GetAllQuestions() ([]ent.Question, error)
-	Count() int
 	UpdateQuestion(string, ent.Question) (interface{}, error)
 	DeleteQuestion(string) (string, error)
 	GetQuestionById(string) (ent.Question, error)
@@ -18,95 +21,105 @@ type QuestionService interface {
 }
 
 // stringService is a concrete implementation of StringService
-type QuestionServiceImpl struct{}
+type QuestionServiceImpl struct {
+	DB *sql.DB
+}
 
 type allQuestions []ent.Question
 
-var Questions = allQuestions{
-	{
-		ID:          "1",
-		Content:     "Qué hora es?",
-		Description: "pregunta breve",
-		CreatedAt:   time.Now(),
-		UserCreated: "Rafa",
-		UpdatedAt:   time.Now(),
-		UserUpdated: "",
-	},
+func NewQuestionService(host, user, password, dbname string) QuestionService {
+
+	connectionString :=
+		fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", host, user, password, dbname)
+
+	var err error
+	dB, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatal("BD:", err)
+	}
+
+	ent.EnsureTableExists(dB)
+
+	return QuestionServiceImpl{DB: dB}
 }
 
-func NewQuestionService() QuestionService {
-	return QuestionServiceImpl{}
-}
+func (qstImpl QuestionServiceImpl) CreateQuestion(question ent.Question) (ent.Question, error) {
 
-func (QuestionServiceImpl) CreateQuestion(question ent.Question) (ent.Question, error) {
+	question.CreateQuestion(qstImpl.DB)
 
-	Questions = append(Questions, question)
 	return question, nil
 }
 
-func (QuestionServiceImpl) Count() int {
-	return len(Questions)
+func (qstImpl QuestionServiceImpl) GetAllQuestions() ([]ent.Question, error) {
+
+	questions, err := model.GetQuestions(qstImpl.DB, 0, 20)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return questions, nil
+}
+
+func (qstImpl QuestionServiceImpl) UpdateQuestion(questionId string, updatedQuestion ent.Question) (interface{}, error) {
+
+	currentQuestion, err := qstImpl.GetQuestionById(questionId)
+
+	if err != nil {
+		log.Print(err)
+		return "", err
+	}
+
+	currentQuestion.Content = updatedQuestion.Content
+	currentQuestion.Description = updatedQuestion.Description
+	currentQuestion.Answer = updatedQuestion.Answer
+
+	errUpd := currentQuestion.UpdateQuestion(qstImpl.DB)
+	if errUpd != nil {
+		log.Print("Error in update:", errUpd)
+		return "", err
+	}
+
+	return updatedQuestion, nil
 
 }
 
-func (QuestionServiceImpl) GetAllQuestions() ([]ent.Question, error) {
+func (qstImpl QuestionServiceImpl) DeleteQuestion(questionId string) (string, error) {
 
-	return Questions, nil
+	currentQuestion, err := qstImpl.GetQuestionById(questionId)
+
+	if err != nil {
+		log.Print(err)
+		return "", err
+	}
+
+	errDel := currentQuestion.DeleteQuestion(qstImpl.DB)
+
+	if errDel != nil {
+		log.Print(errDel)
+		return "", errDel
+	}
+
+	return fmt.Sprintf("The Question with ID %v has been deleted successfully", currentQuestion.ID), nil
 }
 
-func (QuestionServiceImpl) UpdateQuestion(questionId string, updatedQuestion ent.Question) (interface{}, error) {
+func (qstImpl QuestionServiceImpl) GetQuestionById(questionId string) (ent.Question, error) {
 
-	for i, singleQuestion := range Questions {
-		if singleQuestion.ID == questionId {
-			singleQuestion.Content = updatedQuestion.Content
-			singleQuestion.Description = updatedQuestion.Description
-			singleQuestion.UpdatedAt = time.Now()
-			singleQuestion.UserCreated = updatedQuestion.UserCreated
-			Questions = append(Questions[:i], singleQuestion)
-			return updatedQuestion, nil
+	currentQuestion := ent.Question{ID: questionId}
+
+	err := currentQuestion.GetQuestion(qstImpl.DB)
+
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return ent.Question{}, errors.New("Question not found")
 		}
+		log.Print(err)
+		return ent.Question{}, err
 	}
 
-	return nil, errors.New("Question not found")
-
+	return currentQuestion, nil
 }
 
-func (QuestionServiceImpl) DeleteQuestion(questionId string) (string, error) {
-
-	for i, singleQuestion := range Questions {
-		if singleQuestion.ID == questionId {
-			Questions = append(Questions[:i], Questions[i+1:]...)
-			return fmt.Sprintf("The Question with ID %v has been deleted successfully", questionId), nil
-		}
-	}
-
-	return "", errors.New("Question not found")
-}
-
-func (QuestionServiceImpl) GetQuestionById(questionId string) (ent.Question, error) {
-
-	for _, singleQuestion := range Questions {
-		if singleQuestion.ID == questionId {
-			return singleQuestion, nil
-		}
-	}
-
-	return ent.Question{}, errors.New("Question not found")
-}
-
-func (QuestionServiceImpl) GetQuestionsByUser(user string) ([]ent.Question, error) {
-
-	var questionsUser []ent.Question
-
-	for i, singleQuestion := range Questions {
-		if singleQuestion.UserCreated == user {
-			questionsUser = append(questionsUser[:i], singleQuestion)
-		}
-	}
-
-	if len(questionsUser) > 0 {
-		return questionsUser, nil
-	}
+func (qstImpl QuestionServiceImpl) GetQuestionsByUser(user string) ([]ent.Question, error) {
 
 	return nil, errors.New("Question not found")
 }

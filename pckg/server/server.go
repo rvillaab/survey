@@ -2,12 +2,15 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/http"
 	e "survey/pckg/endpoint"
-	ent "survey/pckg/entity"
+	ent "survey/pckg/model"
 	quest "survey/pckg/question"
 	service "survey/pckg/service"
 	t "survey/pckg/transport"
+	"time"
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -20,12 +23,6 @@ import (
 func NewHTTPServer(ctx context.Context, endpoints e.Endpoints) http.Handler {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
-
-	r.Methods("GET").Path("/count").Handler(httptransport.NewServer(
-		endpoints.CountEndpoint,
-		t.DecodeCountRequest,
-		t.EncodeResponse,
-	))
 
 	r.Methods("GET").Path("/questions").Handler(httptransport.NewServer(
 		endpoints.GetAllQuestionsEndpoint,
@@ -89,9 +86,9 @@ func (s *QuestionGRPCServer) CreateQuestion(ctx context.Context, q *quest.Questi
 	newQuestion := &ent.Question{ID: q.ID,
 		Content:     q.Content,
 		Description: q.Content,
-		CreatedAt:   q.CreatedAt.AsTime(),
+		CreatedAt:   q.CreatedAt.AsTime().String(),
 		UserCreated: q.UserCreated,
-		UpdatedAt:   q.UpdatedAt.AsTime(),
+		UpdatedAt:   q.UpdatedAt.AsTime().Local().String(),
 		UserUpdated: q.UserUpdated,
 	}
 
@@ -113,14 +110,28 @@ func (s *QuestionGRPCServer) GetAllQuestions(context.Context, *quest.EmptyReques
 
 	questionResponse := &quest.AllQuestionResponse{}
 
+	layout := "02/01/2004 15:04:00"
+
 	for _, currentQuestion := range questions {
-		newQuestion := &quest.Question{ID: currentQuestion.ID,
-			Content:     currentQuestion.Content,
-			Description: currentQuestion.Description,
-			CreatedAt:   timestamppb.New(currentQuestion.CreatedAt),
-			UserCreated: currentQuestion.UserCreated,
-			UpdatedAt:   timestamppb.New(currentQuestion.UpdatedAt),
-			UserUpdated: currentQuestion.UserUpdated}
+		newQuestion := &quest.Question{}
+
+		newQuestion.ID = currentQuestion.ID
+		newQuestion.Content = currentQuestion.Content
+		newQuestion.Description = currentQuestion.Description
+		fmt.Println(currentQuestion.CreatedAt)
+		crateTime, err := time.Parse(layout, currentQuestion.CreatedAt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		newQuestion.CreatedAt = timestamppb.New(crateTime)
+		newQuestion.UserCreated = currentQuestion.UserCreated
+
+		updateTime, erru := time.Parse(layout, currentQuestion.UpdatedAt)
+		if erru != nil {
+			log.Fatal(erru)
+		}
+		newQuestion.UpdatedAt = timestamppb.New(updateTime)
+		newQuestion.UserUpdated = currentQuestion.UserUpdated
 
 		questionResponse.Questions = append(questionResponse.Questions, newQuestion)
 
@@ -152,14 +163,28 @@ func (s *QuestionGRPCServer) GetQuestionById(ctx context.Context, req *quest.Req
 		return nil, status.Errorf(codes.Aborted, err.Error())
 	}
 
-	newQuestion := &quest.Question{ID: questionResponse.ID,
-		Content:     questionResponse.Content,
-		Description: questionResponse.Content,
-		CreatedAt:   timestamppb.New(questionResponse.CreatedAt),
-		UserCreated: questionResponse.UserCreated,
-		UpdatedAt:   timestamppb.New(questionResponse.UpdatedAt),
-		UserUpdated: questionResponse.UserUpdated,
+	layout := "02/01/2004 15:04:00"
+
+	fmt.Println("date", questionResponse.CreatedAt)
+
+	newQuestion := &quest.Question{}
+
+	newQuestion.ID = questionResponse.ID
+	newQuestion.Content = questionResponse.Content
+	newQuestion.Description = questionResponse.Description
+	crateTime, err := time.Parse(layout, questionResponse.CreatedAt)
+	if err != nil {
+		log.Fatal(err)
 	}
+	newQuestion.CreatedAt = timestamppb.New(crateTime)
+	newQuestion.UserCreated = questionResponse.UserCreated
+
+	updateTime, erru := time.Parse(layout, questionResponse.UpdatedAt)
+	if erru != nil {
+		log.Fatal(erru)
+	}
+	newQuestion.UpdatedAt = timestamppb.New(updateTime)
+	newQuestion.UserUpdated = questionResponse.UserUpdated
 
 	return newQuestion, nil
 }

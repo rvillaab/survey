@@ -3,7 +3,7 @@ package endpoint
 import (
 	"context"
 	"log"
-	ent "survey/pckg/entity"
+	ent "survey/pckg/model"
 	s "survey/pckg/service"
 	t "survey/pckg/transport"
 
@@ -14,19 +14,11 @@ import (
 type Endpoints struct {
 	CreateQuestionEndpoint     endpoint.Endpoint
 	GetAllQuestionsEndpoint    endpoint.Endpoint
-	CountEndpoint              endpoint.Endpoint
 	UpdateQuestionEndpoint     endpoint.Endpoint
 	DeleteQuestionEndpoint     endpoint.Endpoint
 	GetQuestionByIdEndpoint    endpoint.Endpoint
 	GetQuestionsByUserEndpoint endpoint.Endpoint
 	GetAllAnswersEndpoint      endpoint.Endpoint
-}
-
-func MakeCountEndpoint(svc s.QuestionService) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
-		v := svc.Count()
-		return v, nil
-	}
 }
 
 func MakeCreateQuestionEndpoint(svc s.QuestionService) endpoint.Endpoint {
@@ -94,28 +86,6 @@ func MakeGetQuestionsByUserEndpoint(svc s.QuestionService) endpoint.Endpoint {
 		}
 		return v, nil
 	}
-}
-
-func MakeGetallAnswersEndpoint(svc s.AnswerService) endpoint.Endpoint {
-	return func(_ context.Context, request interface{}) (interface{}, error) {
-		v, err := svc.GetAllAnswers()
-		if err != nil {
-			log.Fatal(err)
-			return v, err
-		}
-		return v, nil
-	}
-}
-
-func (e Endpoints) Count(ctx context.Context) (string, error) {
-
-	resp, err := e.CountEndpoint(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-
-	response := resp.(string)
-	return response, nil
 }
 
 func (e Endpoints) GetAllQuestions(ctx context.Context) (string, error) {
