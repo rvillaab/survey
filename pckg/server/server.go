@@ -2,21 +2,19 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	e "survey/pckg/endpoint"
 	ent "survey/pckg/model"
 	quest "survey/pckg/question"
 	service "survey/pckg/service"
 	t "survey/pckg/transport"
-	"time"
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // NewHTTPServer is a good little server
@@ -85,11 +83,9 @@ func (s *QuestionGRPCServer) CreateQuestion(ctx context.Context, q *quest.Questi
 
 	newQuestion := &ent.Question{ID: q.ID,
 		Content:     q.Content,
-		Description: q.Content,
-		CreatedAt:   q.CreatedAt.AsTime().String(),
+		Description: q.Description,
+		Answer:      q.Answer,
 		UserCreated: q.UserCreated,
-		UpdatedAt:   q.UpdatedAt.AsTime().Local().String(),
-		UserUpdated: q.UserUpdated,
 	}
 
 	finalquestion, err := s.Serv.CreateQuestion(*newQuestion)
@@ -110,29 +106,14 @@ func (s *QuestionGRPCServer) GetAllQuestions(context.Context, *quest.EmptyReques
 
 	questionResponse := &quest.AllQuestionResponse{}
 
-	layout := "02/01/2004 15:04:00"
-
 	for _, currentQuestion := range questions {
 		newQuestion := &quest.Question{}
 
 		newQuestion.ID = currentQuestion.ID
 		newQuestion.Content = currentQuestion.Content
 		newQuestion.Description = currentQuestion.Description
-		fmt.Println(currentQuestion.CreatedAt)
-		crateTime, err := time.Parse(layout, currentQuestion.CreatedAt)
-		if err != nil {
-			log.Fatal(err)
-		}
-		newQuestion.CreatedAt = timestamppb.New(crateTime)
 		newQuestion.UserCreated = currentQuestion.UserCreated
-
-		updateTime, erru := time.Parse(layout, currentQuestion.UpdatedAt)
-		if erru != nil {
-			log.Fatal(erru)
-		}
-		newQuestion.UpdatedAt = timestamppb.New(updateTime)
-		newQuestion.UserUpdated = currentQuestion.UserUpdated
-
+		newQuestion.Answer = currentQuestion.Answer
 		questionResponse.Questions = append(questionResponse.Questions, newQuestion)
 
 	}
@@ -140,13 +121,29 @@ func (s *QuestionGRPCServer) GetAllQuestions(context.Context, *quest.EmptyReques
 	return questionResponse, nil
 
 }
-func (s *QuestionGRPCServer) UpdateQuestion(context.Context, *quest.RequestWithId) (*quest.Result, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateQuestion not implemented")
+func (s *QuestionGRPCServer) UpdateQuestion(ctx context.Context, req *quest.Question) (*quest.Result, error) {
+	fmt.Println("Id0", req.ID)
+	newQuestion := ent.Question{}
+	newQuestion.ID = req.ID
+	newQuestion.Content = req.Content
+	newQuestion.Description = req.Description
+	newQuestion.UserCreated = req.UserCreated
+	newQuestion.Answer = req.Answer
+
+	response, err := s.Serv.UpdateQuestion(req.ID, newQuestion)
+
+	if err != nil {
+		return nil, status.Errorf(codes.Aborted, err.Error())
+	}
+
+	data, _ := json.Marshal(response)
+
+	return &quest.Result{Message: string(data)}, nil
 }
 
 func (s *QuestionGRPCServer) DeleteQuestion(ctx context.Context, req *quest.RequestWithId) (*quest.Result, error) {
 
-	response, err := s.Serv.DeleteQuestion(req.Name)
+	response, err := s.Serv.DeleteQuestion(req.Id)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Aborted, err.Error())
@@ -157,13 +154,11 @@ func (s *QuestionGRPCServer) DeleteQuestion(ctx context.Context, req *quest.Requ
 
 func (s *QuestionGRPCServer) GetQuestionById(ctx context.Context, req *quest.RequestWithId) (*quest.Question, error) {
 
-	questionResponse, err := s.Serv.GetQuestionById(req.Name)
+	questionResponse, err := s.Serv.GetQuestionById(req.Id)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Aborted, err.Error())
 	}
-
-	layout := "02/01/2004 15:04:00"
 
 	fmt.Println("date", questionResponse.CreatedAt)
 
@@ -172,19 +167,8 @@ func (s *QuestionGRPCServer) GetQuestionById(ctx context.Context, req *quest.Req
 	newQuestion.ID = questionResponse.ID
 	newQuestion.Content = questionResponse.Content
 	newQuestion.Description = questionResponse.Description
-	crateTime, err := time.Parse(layout, questionResponse.CreatedAt)
-	if err != nil {
-		log.Fatal(err)
-	}
-	newQuestion.CreatedAt = timestamppb.New(crateTime)
 	newQuestion.UserCreated = questionResponse.UserCreated
-
-	updateTime, erru := time.Parse(layout, questionResponse.UpdatedAt)
-	if erru != nil {
-		log.Fatal(erru)
-	}
-	newQuestion.UpdatedAt = timestamppb.New(updateTime)
-	newQuestion.UserUpdated = questionResponse.UserUpdated
+	newQuestion.Answer = questionResponse.Answer
 
 	return newQuestion, nil
 }

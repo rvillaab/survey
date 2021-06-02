@@ -36,8 +36,9 @@ const tableCreationQuery = `CREATE TABLE IF NOT EXISTS questions
 )`
 
 func (p *Question) GetQuestion(db *sql.DB) error {
-	return db.QueryRow("SELECT id, 'content', description, TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated FROM questions WHERE id=$1",
-		p.ID).Scan(&p.ID, &p.Content, &p.Description, &p.CreatedAt, &p.UserCreated)
+	return db.QueryRow(`SELECT id, 'content', description, COALESCE(CAST(answer AS VARCHAR), '') answer,
+	 TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated FROM questions WHERE id=$1`,
+		p.ID).Scan(&p.ID, &p.Content, &p.Description, &p.Answer, &p.CreatedAt, &p.UserCreated)
 }
 
 func (p *Question) UpdateQuestion(db *sql.DB) error {
@@ -56,8 +57,8 @@ func (p *Question) DeleteQuestion(db *sql.DB) error {
 
 func (p *Question) CreateQuestion(db *sql.DB) error {
 	err := db.QueryRow(
-		"INSERT INTO questions(content, description, createdat, usercreated) VALUES($1, $2,Now(),$3) RETURNING id",
-		p.Content, p.Description, p.UserCreated).Scan(&p.ID)
+		"INSERT INTO questions(content, description, answer, createdat, usercreated) VALUES($1, $2, $3, Now(), $4) RETURNING id",
+		p.Content, p.Description, p.Answer, p.UserCreated).Scan(&p.ID)
 
 	if err != nil {
 		log.Print(err)
@@ -69,7 +70,9 @@ func (p *Question) CreateQuestion(db *sql.DB) error {
 
 func GetQuestions(db *sql.DB, start, count int) ([]Question, error) {
 	rows, err := db.Query(
-		`SELECT id, 'content', description, TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated,
+		`SELECT id, content, description, 
+		COALESCE(answer, '') answer , 
+		TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated,
 		COALESCE(CAST(updatedat AS VARCHAR), '') updatedat, 
 		COALESCE(CAST(useredited AS VARCHAR), '') userupdated
 		FROM public.questions LIMIT $1 OFFSET $2`,
@@ -85,7 +88,7 @@ func GetQuestions(db *sql.DB, start, count int) ([]Question, error) {
 
 	for rows.Next() {
 		var p Question
-		if err := rows.Scan(&p.ID, &p.Content, &p.Description, &p.CreatedAt, &p.UserCreated, &p.UpdatedAt, &p.UserUpdated); err != nil {
+		if err := rows.Scan(&p.ID, &p.Content, &p.Description, &p.Answer, &p.CreatedAt, &p.UserCreated, &p.UpdatedAt, &p.UserUpdated); err != nil {
 			return nil, err
 		}
 		questions = append(questions, p)

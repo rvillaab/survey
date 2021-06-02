@@ -4,28 +4,31 @@ package question;
 
 option go_package = "survey/pckg/question";
 
-import "google/protobuf/timestamp.proto";
-
 service QuestionService{
 
 rpc CreateQuestion(Question) returns (Result);
 rpc GetAllQuestions(EmptyRequest) returns (AllQuestionResponse);
-rpc UpdateQuestion(RequestWithId) returns (Result);
+rpc UpdateQuestion(Question) returns (Result);
 rpc DeleteQuestion(RequestWithId) returns (Result);
 rpc GetQuestionById(RequestWithId) returns (Question);
-//rpc GetQuestionsByUser()returns ();
+rpc GetQuestionsByUser(RequestWithUser)returns (AllQuestionResponse);
 
 }
 
 
-// The request message containing the user's name.
+// The empty request message.
 message EmptyRequest {
 }
 
-// The request message containing the user's name.
+// The request message containing the id.
 message RequestWithId {
-    string name = 1;
+    string id = 1;
   }
+
+// The request message containing the user's name.
+message RequestWithUser {
+  string user = 1;
+}
 
 
   // The response message containing the greetings
@@ -38,10 +41,8 @@ message Question {
   string    ID            =1;
 	string    Content       =2;
 	string    Description   =3;
-	google.protobuf.Timestamp  CreatedAt  =4;
+  string    Answer        =4;
 	string    UserCreated   =5;
-	google.protobuf.Timestamp UpdatedAt   =6;
-  string    UserUpdated   =7;
 
 }
 

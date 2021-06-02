@@ -20,20 +20,21 @@ const _ = grpc.SupportPackageIsVersion7
 type QuestionServiceClient interface {
 	CreateQuestion(ctx context.Context, in *Question, opts ...grpc.CallOption) (*Result, error)
 	GetAllQuestions(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AllQuestionResponse, error)
-	UpdateQuestion(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Result, error)
+	UpdateQuestion(ctx context.Context, in *Question, opts ...grpc.CallOption) (*Result, error)
 	DeleteQuestion(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Result, error)
 	GetQuestionById(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Question, error)
+	GetQuestionsByUser(ctx context.Context, in *RequestWithUser, opts ...grpc.CallOption) (*AllQuestionResponse, error)
 }
 
-type QuestionServiceClientImpl struct {
+type questionServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
 func NewQuestionServiceClient(cc grpc.ClientConnInterface) QuestionServiceClient {
-	return &QuestionServiceClientImpl{cc}
+	return &questionServiceClient{cc}
 }
 
-func (c *QuestionServiceClientImpl) CreateQuestion(ctx context.Context, in *Question, opts ...grpc.CallOption) (*Result, error) {
+func (c *questionServiceClient) CreateQuestion(ctx context.Context, in *Question, opts ...grpc.CallOption) (*Result, error) {
 	out := new(Result)
 	err := c.cc.Invoke(ctx, "/question.QuestionService/CreateQuestion", in, out, opts...)
 	if err != nil {
@@ -42,7 +43,7 @@ func (c *QuestionServiceClientImpl) CreateQuestion(ctx context.Context, in *Ques
 	return out, nil
 }
 
-func (c *QuestionServiceClientImpl) GetAllQuestions(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AllQuestionResponse, error) {
+func (c *questionServiceClient) GetAllQuestions(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*AllQuestionResponse, error) {
 	out := new(AllQuestionResponse)
 	err := c.cc.Invoke(ctx, "/question.QuestionService/GetAllQuestions", in, out, opts...)
 	if err != nil {
@@ -51,7 +52,7 @@ func (c *QuestionServiceClientImpl) GetAllQuestions(ctx context.Context, in *Emp
 	return out, nil
 }
 
-func (c *QuestionServiceClientImpl) UpdateQuestion(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Result, error) {
+func (c *questionServiceClient) UpdateQuestion(ctx context.Context, in *Question, opts ...grpc.CallOption) (*Result, error) {
 	out := new(Result)
 	err := c.cc.Invoke(ctx, "/question.QuestionService/UpdateQuestion", in, out, opts...)
 	if err != nil {
@@ -60,7 +61,7 @@ func (c *QuestionServiceClientImpl) UpdateQuestion(ctx context.Context, in *Requ
 	return out, nil
 }
 
-func (c *QuestionServiceClientImpl) DeleteQuestion(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Result, error) {
+func (c *questionServiceClient) DeleteQuestion(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Result, error) {
 	out := new(Result)
 	err := c.cc.Invoke(ctx, "/question.QuestionService/DeleteQuestion", in, out, opts...)
 	if err != nil {
@@ -69,9 +70,18 @@ func (c *QuestionServiceClientImpl) DeleteQuestion(ctx context.Context, in *Requ
 	return out, nil
 }
 
-func (c *QuestionServiceClientImpl) GetQuestionById(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Question, error) {
+func (c *questionServiceClient) GetQuestionById(ctx context.Context, in *RequestWithId, opts ...grpc.CallOption) (*Question, error) {
 	out := new(Question)
 	err := c.cc.Invoke(ctx, "/question.QuestionService/GetQuestionById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *questionServiceClient) GetQuestionsByUser(ctx context.Context, in *RequestWithUser, opts ...grpc.CallOption) (*AllQuestionResponse, error) {
+	out := new(AllQuestionResponse)
+	err := c.cc.Invoke(ctx, "/question.QuestionService/GetQuestionsByUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,9 +94,10 @@ func (c *QuestionServiceClientImpl) GetQuestionById(ctx context.Context, in *Req
 type QuestionServiceServer interface {
 	CreateQuestion(context.Context, *Question) (*Result, error)
 	GetAllQuestions(context.Context, *EmptyRequest) (*AllQuestionResponse, error)
-	UpdateQuestion(context.Context, *RequestWithId) (*Result, error)
+	UpdateQuestion(context.Context, *Question) (*Result, error)
 	DeleteQuestion(context.Context, *RequestWithId) (*Result, error)
 	GetQuestionById(context.Context, *RequestWithId) (*Question, error)
+	GetQuestionsByUser(context.Context, *RequestWithUser) (*AllQuestionResponse, error)
 	mustEmbedUnimplementedQuestionServiceServer()
 }
 
@@ -100,7 +111,7 @@ func (UnimplementedQuestionServiceServer) CreateQuestion(context.Context, *Quest
 func (UnimplementedQuestionServiceServer) GetAllQuestions(context.Context, *EmptyRequest) (*AllQuestionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllQuestions not implemented")
 }
-func (UnimplementedQuestionServiceServer) UpdateQuestion(context.Context, *RequestWithId) (*Result, error) {
+func (UnimplementedQuestionServiceServer) UpdateQuestion(context.Context, *Question) (*Result, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateQuestion not implemented")
 }
 func (UnimplementedQuestionServiceServer) DeleteQuestion(context.Context, *RequestWithId) (*Result, error) {
@@ -108,6 +119,9 @@ func (UnimplementedQuestionServiceServer) DeleteQuestion(context.Context, *Reque
 }
 func (UnimplementedQuestionServiceServer) GetQuestionById(context.Context, *RequestWithId) (*Question, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionById not implemented")
+}
+func (UnimplementedQuestionServiceServer) GetQuestionsByUser(context.Context, *RequestWithUser) (*AllQuestionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQuestionsByUser not implemented")
 }
 func (UnimplementedQuestionServiceServer) mustEmbedUnimplementedQuestionServiceServer() {}
 
@@ -159,7 +173,7 @@ func _QuestionService_GetAllQuestions_Handler(srv interface{}, ctx context.Conte
 }
 
 func _QuestionService_UpdateQuestion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RequestWithId)
+	in := new(Question)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -171,7 +185,7 @@ func _QuestionService_UpdateQuestion_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/question.QuestionService/UpdateQuestion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QuestionServiceServer).UpdateQuestion(ctx, req.(*RequestWithId))
+		return srv.(QuestionServiceServer).UpdateQuestion(ctx, req.(*Question))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -212,6 +226,24 @@ func _QuestionService_GetQuestionById_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _QuestionService_GetQuestionsByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestWithUser)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QuestionServiceServer).GetQuestionsByUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/question.QuestionService/GetQuestionsByUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QuestionServiceServer).GetQuestionsByUser(ctx, req.(*RequestWithUser))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // QuestionService_ServiceDesc is the grpc.ServiceDesc for QuestionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -238,6 +270,10 @@ var QuestionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetQuestionById",
 			Handler:    _QuestionService_GetQuestionById_Handler,
+		},
+		{
+			MethodName: "GetQuestionsByUser",
+			Handler:    _QuestionService_GetQuestionsByUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

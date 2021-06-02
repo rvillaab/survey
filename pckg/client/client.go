@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -58,7 +58,15 @@ func processRequest(option string, parameter string, conn *grpc.ClientConn, ctx 
 
 	switch option {
 	case "1": //Create question
-		response, err := newQuestion(client, ctx)
+		var newQuestion = &pb.Question{}
+		jsonErr := json.Unmarshal([]byte(parameter), &newQuestion)
+		if jsonErr != nil {
+			fmt.Println(jsonErr)
+		}
+
+		fmt.Print(fmt.Sprintf("content: %v, Desc:%v, anser:%v \n", newQuestion.Content, newQuestion.Description, newQuestion.Answer))
+
+		response, err := client.CreateQuestion(ctx, newQuestion)
 
 		fmt.Println(err)
 		if err != nil {
@@ -76,7 +84,13 @@ func processRequest(option string, parameter string, conn *grpc.ClientConn, ctx 
 		fmt.Println(response)
 		break
 	case "3": //Update question
-		response, err := client.UpdateQuestion(ctx, &pb.RequestWithId{Name: parameter})
+		var questionUpdate = &pb.Question{}
+		jsonErr := json.Unmarshal([]byte(parameter), &questionUpdate)
+		if jsonErr != nil {
+			fmt.Println(jsonErr)
+		}
+
+		response, err := client.UpdateQuestion(ctx, questionUpdate)
 
 		fmt.Println(err)
 		if err != nil {
@@ -85,7 +99,7 @@ func processRequest(option string, parameter string, conn *grpc.ClientConn, ctx 
 		fmt.Println(response)
 		break
 	case "4": //Delete question
-		response, err := client.DeleteQuestion(ctx, &pb.RequestWithId{Name: parameter})
+		response, err := client.DeleteQuestion(ctx, &pb.RequestWithId{Id: parameter})
 
 		fmt.Println(err)
 		if err != nil {
@@ -94,7 +108,7 @@ func processRequest(option string, parameter string, conn *grpc.ClientConn, ctx 
 		fmt.Println(response)
 		break
 	case "5": //Get question by Id
-		response, err := client.GetQuestionById(ctx, &pb.RequestWithId{Name: parameter})
+		response, err := client.GetQuestionById(ctx, &pb.RequestWithId{Id: parameter})
 
 		fmt.Println(err)
 		if err != nil {
@@ -106,19 +120,4 @@ func processRequest(option string, parameter string, conn *grpc.ClientConn, ctx 
 		fmt.Println("Not a valid option")
 	}
 
-}
-
-func newQuestion(clnt pb.QuestionServiceClient, ctx context.Context) (*pb.Result, error) {
-
-	newQuestion := &pb.Question{ID: "25",
-		Content:     "Prueba de creación",
-		Description: "nada",
-		CreatedAt:   timestamppb.Now(),
-		UserCreated: "Luis",
-		UpdatedAt:   nil,
-		UserUpdated: "",
-	}
-
-	response, err := clnt.CreateQuestion(ctx, newQuestion)
-	return response, err
 }
