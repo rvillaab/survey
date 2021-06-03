@@ -10,7 +10,7 @@ type Question struct {
 	Content     string `json:"content"`
 	Description string `json:"description"`
 	UserCreated string `json:"user_created"`
-	CreatedAt   string `json:"created_at"`
+	CreatedAt   string `json:"created_at,omitempty"`
 	UserUpdated string `json:"user_updated,omitempty"`
 	UpdatedAt   string `json:"updated_at,omitempty"`
 	Answer      string `json:"answer,omitempty"`
@@ -36,21 +36,25 @@ const tableCreationQuery = `CREATE TABLE IF NOT EXISTS questions
 )`
 
 func (p *Question) GetQuestion(db *sql.DB) error {
-	return db.QueryRow(`SELECT id, 'content', description, COALESCE(CAST(answer AS VARCHAR), '') answer,
-	 TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated FROM questions WHERE id=$1`,
-		p.ID).Scan(&p.ID, &p.Content, &p.Description, &p.Answer, &p.CreatedAt, &p.UserCreated)
+	/* return db.QueryRow(`SELECT id, 'content', description, COALESCE(CAST(answer AS VARCHAR), '') answer,
+	 TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated FROM questions WHERE id = $1`,
+		p.ID).Scan(&p.ID, &p.Content, &p.Description, &p.Answer, &p.CreatedAt, &p.UserCreated) */
+
+	return db.QueryRow(`SELECT id, content, description, COALESCE(CAST(answer AS VARCHAR), '') answer,
+	 TO_CHAR(createdat, 'dd/mm/yyyy HH24:MI:SS'), usercreated FROM questions WHERE id = $1`,
+		&p.ID).Scan(&p.ID, &p.Content, &p.Description, &p.Answer, &p.CreatedAt, &p.UserCreated)
 }
 
 func (p *Question) UpdateQuestion(db *sql.DB) error {
 	_, err :=
-		db.Exec("UPDATE questions SET content=$1, description=$2, answer=$3, updatedat=NOW() WHERE id=$4",
+		db.Exec("UPDATE questions SET content = $1, description = $2, answer = $3, updatedat = NOW() WHERE id = $4",
 			p.Content, p.Description, p.Answer, p.ID)
 
 	return err
 }
 
 func (p *Question) DeleteQuestion(db *sql.DB) error {
-	_, err := db.Exec("DELETE FROM questions WHERE id=$1", p.ID)
+	_, err := db.Exec("DELETE FROM questions where id = $1", p.ID)
 
 	return err
 }
