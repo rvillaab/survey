@@ -9,7 +9,7 @@ type Question struct {
 	ID          string `json:"id,omitempty"`
 	Content     string `json:"content"`
 	Description string `json:"description"`
-	UserCreated string `json:"user_created"`
+	UserCreated string `json:"user_created,omitempty"`
 	CreatedAt   string `json:"created_at,omitempty"`
 	UserUpdated string `json:"user_updated,omitempty"`
 	UpdatedAt   string `json:"updated_at,omitempty"`
