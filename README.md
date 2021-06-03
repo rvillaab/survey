@@ -13,6 +13,12 @@ Survey is an API for manage questions that uses Rest and GRPC.
 We can obtain, create, edit, delete questions through the api using two protocols, REST or GRPC.
 To use REST we can use POSTMAN or any client like this and to use GRPC we can run the ***client.go*** that is in the folder ***pckg/client***
 
+To run the containers you should to run in the root folder the command: 
+
+```
+docker-composer up
+``` 
+
 To validate the records created, the questions table of the survey database can be consulted, the connection data can be found in the .env file 
 
 ### *Rest*
