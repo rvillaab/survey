@@ -13,6 +13,8 @@ Survey is an API for manage questions that uses Rest and GRPC.
 We can obtain, create, edit, delete questions through the api using two protocols, REST or GRPC.
 To use REST we can use POSTMAN or any client like this and to use GRPC we can run the ***client.go*** that is in the folder ***pckg/client***
 
+To validate the records created, the questions table of the survey database can be consulted, the connection data can be found in the .env file 
+
 ### *Rest*
 
 __Endpoints__
@@ -127,6 +129,7 @@ _Response_
 
 ### *GRPC*
 
+To use GRPC we can run the ***client.go*** that is in the folder ***pckg/client***
 
 * Create, option 1 allows to create a new question, It needs to receive a escaped json parameter with the corresponding structure.
 
@@ -153,4 +156,8 @@ go run client.go 4 8
 ```
 go run client.go 5 9
 ```
+## Tools 🛠️
+
+* [Golang](https://golang.org/)
+* [PostgreSQL](https://www.postgresql.org/) 
 

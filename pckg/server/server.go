@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	e "survey/pckg/endpoint"
 	ent "survey/pckg/model"
@@ -122,7 +121,7 @@ func (s *QuestionGRPCServer) GetAllQuestions(context.Context, *quest.EmptyReques
 
 }
 func (s *QuestionGRPCServer) UpdateQuestion(ctx context.Context, req *quest.Question) (*quest.Result, error) {
-	fmt.Println("Id0", req.ID)
+
 	newQuestion := ent.Question{}
 	newQuestion.ID = req.ID
 	newQuestion.Content = req.Content
@@ -159,8 +158,6 @@ func (s *QuestionGRPCServer) GetQuestionById(ctx context.Context, req *quest.Req
 	if err != nil {
 		return nil, status.Errorf(codes.Aborted, err.Error())
 	}
-
-	fmt.Println("date", questionResponse.CreatedAt)
 
 	newQuestion := &quest.Question{}
 
