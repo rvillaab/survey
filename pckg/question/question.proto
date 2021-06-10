@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package question;
+
+option go_package = "survey/pckg/question";
+
+service QuestionService{
+
+rpc CreateQuestion(Question) returns (Result);
+rpc GetAllQuestions(EmptyRequest) returns (AllQuestionResponse);
+rpc UpdateQuestion(Question) returns (Result);
+rpc DeleteQuestion(RequestWithId) returns (Result);
+rpc GetQuestionById(RequestWithId) returns (Question);
+rpc GetQuestionsByUser(RequestWithUser)returns (AllQuestionResponse);
+
+}
+
+
+// The empty request message.
+message EmptyRequest {
+}
+
+// The request message containing the id.
+message RequestWithId {
+    string id = 1;
+  }
+
+// The request message containing the user's name.
+message RequestWithUser {
+  string user = 1;
+}
+
+
+  // The response message containing the greetings
+message Result {
+    string message = 1;
+  }
+
+message Question {
+
+  string    ID            =1;
+	string    Content       =2;
+	string    Description   =3;
+  string    Answer        =4;
+	string    UserCreated   =5;
+
+}
+
+
+message AllQuestionResponse {
+  repeated Question questions=1;
+}
+  
