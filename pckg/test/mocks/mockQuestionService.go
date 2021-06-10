@@ -22,8 +22,46 @@ type MockQuestionService struct {
 	MockGetQuestionsByUserFunc GetQuestionsByUserFunc
 }
 
-func (m *MockQuestionService) SetGetAllFunc(f GetAllQuestionsFunc) {
-	m.MockGetAllQuestionsFunc = f
+func (m *MockQuestionService) SetGetAllFunc(f GetAllQuestionsFunc) error {
+	if f != nil {
+		m.MockGetAllQuestionsFunc = f
+	}
+	return nil
+}
+
+func (m *MockQuestionService) SetCreateQuestionFunc(f CreateQuestionFunc) error {
+	if f != nil {
+		m.MockCreateQuestionFunc = f
+	}
+	return nil
+}
+
+func (m *MockQuestionService) SetUpdateQuestionFunc(f UpdateQuestionFunc) error {
+	if f != nil {
+		m.MockUpdateQuestionFunc = f
+	}
+	return nil
+}
+
+func (m *MockQuestionService) SeDeleteQuestionFunc(f DeleteQuestionFunc) error {
+	if f != nil {
+		m.MockDeleteQuestionFunc = f
+	}
+	return nil
+}
+
+func (m *MockQuestionService) SetGetQuestionByIdFunc(f GetQuestionByIdFunc) error {
+	if f != nil {
+		m.MockGetQuestionByIdFunc = f
+	}
+	return nil
+}
+
+func (m *MockQuestionService) SetGetQuestionsByUserFunc(f GetQuestionsByUserFunc) error {
+	if f != nil {
+		m.MockGetQuestionsByUserFunc = f
+	}
+	return nil
 }
 
 func (m *MockQuestionService) GetAllQuestions() ([]model.Question, error) {

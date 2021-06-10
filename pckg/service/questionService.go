@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"survey/pckg/model"
 	ent "survey/pckg/model"
 
 	_ "github.com/lib/pq"
@@ -22,7 +21,7 @@ type QuestionService interface {
 
 // stringService is a concrete implementation of StringService
 type QuestionServiceImpl struct {
-	DB *sql.DB
+	dao ent.QuestionDao
 }
 
 type allQuestions []ent.Question
@@ -40,19 +39,21 @@ func NewQuestionService(host, user, password, dbname string) QuestionService {
 
 	ent.EnsureTableExists(dB)
 
-	return QuestionServiceImpl{DB: dB}
+	questionDao := ent.QuestionDao{DB: dB}
+
+	return QuestionServiceImpl{dao: questionDao}
 }
 
 func (qstImpl QuestionServiceImpl) CreateQuestion(question ent.Question) (ent.Question, error) {
 
-	question.CreateQuestion(qstImpl.DB)
+	qstImpl.dao.CreateQuestion(&question)
 
 	return question, nil
 }
 
 func (qstImpl QuestionServiceImpl) GetAllQuestions() ([]ent.Question, error) {
 
-	questions, err := model.GetQuestions(qstImpl.DB, 0, 20)
+	questions, err := qstImpl.dao.GetQuestions(0, 20)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +74,7 @@ func (qstImpl QuestionServiceImpl) UpdateQuestion(questionId string, updatedQues
 	currentQuestion.Description = updatedQuestion.Description
 	currentQuestion.Answer = updatedQuestion.Answer
 
-	errUpd := currentQuestion.UpdateQuestion(qstImpl.DB)
+	errUpd := qstImpl.dao.UpdateQuestion(&currentQuestion)
 	if errUpd != nil {
 		log.Print("Error in update:", errUpd)
 		return "", err
@@ -92,7 +93,7 @@ func (qstImpl QuestionServiceImpl) DeleteQuestion(questionId string) (string, er
 		return "", err
 	}
 
-	errDel := currentQuestion.DeleteQuestion(qstImpl.DB)
+	errDel := qstImpl.dao.DeleteQuestion(currentQuestion.ID)
 
 	if errDel != nil {
 		log.Print(errDel)
@@ -106,7 +107,7 @@ func (qstImpl QuestionServiceImpl) GetQuestionById(questionId string) (ent.Quest
 
 	currentQuestion := ent.Question{ID: questionId}
 
-	err := currentQuestion.GetQuestion(qstImpl.DB)
+	err := qstImpl.dao.GetQuestion(&currentQuestion)
 
 	if err != nil {
 		if err.Error() == "sql: no rows in result set" {

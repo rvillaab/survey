@@ -35,7 +35,9 @@ func TestGetQuestion(t *testing.T) {
 
 	mock.ExpectQuery(query).WithArgs(quest.ID).WillReturnRows(rows)
 
-	err := quest.GetQuestion(db)
+	questionDao := model.QuestionDao{DB: db}
+
+	err := questionDao.GetQuestion(quest)
 
 	if err != nil {
 		t.Fatalf("an error '%s'", err.Error())
@@ -58,7 +60,9 @@ func TestDelete(t *testing.T) {
 
 	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(quest.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	err := quest.DeleteQuestion(db)
+	questionDao := model.QuestionDao{DB: db}
+
+	err := questionDao.DeleteQuestion(quest.ID)
 	assert.NoError(t, err)
 }
 
@@ -73,6 +77,8 @@ func TestUpdate(t *testing.T) {
 
 	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(quest.Content, quest.Description, quest.Answer, quest.ID).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	err := quest.UpdateQuestion(db)
+	questionDao := model.QuestionDao{DB: db}
+
+	err := questionDao.UpdateQuestion(quest)
 	assert.NoError(t, err)
 }
